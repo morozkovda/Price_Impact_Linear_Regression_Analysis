@@ -13,12 +13,19 @@ import statsmodels.api as sm
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from datetime import datetime, timedelta
 
-df_PI = pd.read_csv(r'data/wbtc_usdc_PI new.csv')
-usdc_tvl =  pd.read_csv(r'data/usdc_tvl_data_new.csv')
-wbtc_tvl =  pd.read_csv(r'data/wbtc_tvl_data_new.csv')
-wbtcusdc_tvl =  pd.read_csv(r'data/wbtcusdc_tvl_data_new.csv')
+# df_PI = pd.read_csv(r'data/wbtc_usdc_PI new.csv')
+# df_PI = pd.read_csv(r'data/usdc_wbtc_PI.csv')
+# usdc_tvl = pd.read_csv(r'data/usdc_tvl_data_new.csv')
+# wbtc_tvl = pd.read_csv(r'data/wbtc_tvl_data_new.csv')
+# wbtcusdc_tvl = pd.read_csv(r'data/wbtcusdc_tvl_data_new.csv')
+
+df_PI = pd.read_csv(r'data/usdc_weth_PI.csv')
+usdc_tvl = pd.read_csv(r'data/usdc_tvl_data_new.csv')
+wbtc_tvl = pd.read_csv(r'data/matic_tvl_data_new.csv')
+wbtcusdc_tvl = pd.read_csv(r'data/wbtcusdc_tvl_data_new.csv')
 
 df_PI = df_PI.drop(df_PI.columns[0], axis=1)
+df_PI = df_PI.drop(df_PI.columns[3], axis=1)
 df_PI = pd.melt(df_PI, id_vars=df_PI.columns[[0,1,2]], var_name='Position Size', value_name='PI')
 df_PI[df_PI.columns[[0,1,2,3]]] = df_PI[df_PI.columns[[0,1,2,3]]].apply(lambda x: x.str.replace("]", ''))
 df_PI[df_PI.columns[[0,1,2,3]]] = df_PI[df_PI.columns[[0,1,2,3]]].apply(lambda x: x.str.replace("'", ''))
@@ -26,8 +33,7 @@ df_PI.rename(columns={
     df_PI.columns[0]: "date",
     df_PI.columns[1]: "time",
     df_PI.columns[2]: "timestamp"},inplace= True)
-df_PI.isna().any()
-
+print(df_PI.isna().any())
 
 def try_convert_to_float(value):
     try:
@@ -73,16 +79,17 @@ df_merged = pd.merge(df_merged, wbtcusdc_tvl, on='date')
 X_poly = sm.add_constant(df_merged[['Position Size','tvl usd value_x','tvl usd value_y']])
 mod_poly = sm.OLS(df_merged['PI'], X_poly)
 reg_poly = mod_poly.fit()
-reg_poly.summary()
+print(reg_poly.summary())
 
 
 predictions = reg_poly.predict(X_poly)
 
-# fig = go.Figure()
-# trace1 = go.Scatter(y=df_merged['PI'], mode='lines', name='PI')
-# trace2 = go.Scatter(y=predictions, mode='lines', name='predictions')
-# fig = go.Figure(data=[trace1, trace2])
-# fig.show()
+fig = go.Figure()
+trace1 = go.Scatter(y=df_merged['PI'], mode='lines', name='PI')
+trace2 = go.Scatter(y=predictions, mode='lines', name='predictions')
+fig = go.Figure(data=[trace1, trace2])
+fig.show()
+
 
 def evaluate_model(actual, predicted):
     metrics = {}
@@ -98,8 +105,5 @@ def evaluate_model(actual, predicted):
     for metric, value in metrics.items():
         print(f'{metric}: {value}')
 
+
 evaluate_model(df_merged['PI'], predictions)
-
-print(df_merged['PI'], predictions)
-
-
