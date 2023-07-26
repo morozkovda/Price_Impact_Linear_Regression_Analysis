@@ -13,16 +13,20 @@ import statsmodels.api as sm
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from datetime import datetime, timedelta
 
-# df_PI = pd.read_csv(r'data/wbtc_usdc_PI new.csv')
+df_PI = pd.read_csv(r'data/wbtc_usdc_PI new.csv')
 # df_PI = pd.read_csv(r'data/usdc_wbtc_PI.csv')
-# usdc_tvl = pd.read_csv(r'data/usdc_tvl_data_new.csv')
-# wbtc_tvl = pd.read_csv(r'data/wbtc_tvl_data_new.csv')
-# wbtcusdc_tvl = pd.read_csv(r'data/wbtcusdc_tvl_data_new.csv')
-
-df_PI = pd.read_csv(r'data/usdc_weth_PI.csv')
 usdc_tvl = pd.read_csv(r'data/usdc_tvl_data_new.csv')
-wbtc_tvl = pd.read_csv(r'data/matic_tvl_data_new.csv')
-wbtcusdc_tvl = pd.read_csv(r'data/wbtcusdc_tvl_data_new.csv')
+wbtc_tvl = pd.read_csv(r'data/wbtc_tvl_data_new.csv')
+
+# df_PI = pd.read_csv(r'data/weth_usdc_PI.csv')
+# df_PI = pd.read_csv(r'data/usdc_weth_PI.csv')
+# usdc_tvl = pd.read_csv(r'data/usdc_tvl_data_new.csv')
+# wbtc_tvl = pd.read_csv(r'data/weth_tvl_data_new.csv')
+
+# df_PI = pd.read_csv(r'data/matic_usdc_PI.csv')
+# df_PI = pd.read_csv(r'data/usdc_matic_PI.csv')
+# usdc_tvl = pd.read_csv(r'data/usdc_tvl_data_new.csv')
+# wbtc_tvl = pd.read_csv(r'data/matic_tvl_data_new.csv')
 
 df_PI = df_PI.drop(df_PI.columns[0], axis=1)
 df_PI = df_PI.drop(df_PI.columns[3], axis=1)
@@ -61,6 +65,7 @@ df_PI = df_PI.drop(['time','timestamp','datetime'],axis = 1)
 df_PI = df_PI.groupby(['date','Position Size']).mean()
 df_PI = df_PI.reset_index()
 
+wbtcusdc_tvl = pd.read_csv(r'data/wbtcusdc_tvl_data_new.csv')
 usdc_tvl = usdc_tvl[['date', 'tvl usd value']]
 wbtc_tvl = wbtc_tvl[['date', 'tvl usd value']]
 wbtcusdc_tvl = wbtcusdc_tvl[['date', 'tvl usd value']]
@@ -70,13 +75,15 @@ for i in [usdc_tvl, wbtc_tvl, wbtcusdc_tvl]:
 df_merged = pd.merge(df_PI, usdc_tvl, on='date')
 df_merged = pd.merge(df_merged, wbtc_tvl, on='date')
 df_merged = pd.merge(df_merged, wbtcusdc_tvl, on='date')
+df_merged['Position Squared'] = df_merged['Position Size']**(3)
 
 # X_poly = sm.add_constant(df_merged[['Position Size','tvl usd value_x','tvl usd value_y', 'tvl usd value']])
 # mod_poly = sm.OLS(df_merged['PI'], X_poly)
 # reg_poly = mod_poly.fit()
 # reg_poly.summary()
 
-X_poly = sm.add_constant(df_merged[['Position Size','tvl usd value_x','tvl usd value_y']])
+# X_poly = sm.add_constant(df_merged[['Position Size','tvl usd value_x','tvl usd value_y']])
+X_poly = sm.add_constant(df_merged[['Position Squared','tvl usd value_x','tvl usd value_y']])
 mod_poly = sm.OLS(df_merged['PI'], X_poly)
 reg_poly = mod_poly.fit()
 print(reg_poly.summary())
