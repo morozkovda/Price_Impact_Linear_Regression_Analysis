@@ -98,8 +98,9 @@ if run_button and uploaded_file2 and uploaded_file3 and uploaded_file4:
             i['date'] = pd.to_datetime(i['date'])
 
         df_merged = pd.merge(df_PI, usdc_tvl, on='date')
-        df_merged = pd.merge(df_merged, wbtc_tvl, on='date')
-        df_merged = pd.merge(df_merged, wbtcusdc_tvl, on='date')
+        df_merged = pd.merge(df_merged, wbtc_tvl, on='date', suffixes =('', '_y'))
+        if tvl_3 == True:
+            df_merged = pd.merge(df_merged, wbtcusdc_tvl, on='date', suffixes =('', '_z'))
         # df_merged['Position Squared'] = df_merged['Position Size']**(1/2)
         return df_merged
 
@@ -108,9 +109,9 @@ if run_button and uploaded_file2 and uploaded_file3 and uploaded_file4:
     # df_merged = preprocessing(in_sample, usdc_tvl, wbtc_tvl)
     # df_merged_out_s = preprocessing(out_of_sample, usdc_tvl, wbtc_tvl)
     if tvl_3 == True:
-        X_poly = sm.add_constant(df_merged[['Position Size','tvl usd value_x','tvl usd value_y', 'tvl usd value']])
+        X_poly = sm.add_constant(df_merged[['Position Size','tvl usd value','tvl usd value_y', 'tvl usd value_z']])
     else:
-        X_poly = sm.add_constant(df_merged[['Position Size','tvl usd value_x','tvl usd value_y']])
+        X_poly = sm.add_constant(df_merged[['Position Size','tvl usd value','tvl usd value_y']])
     mod_poly = sm.OLS(df_merged['PI'], X_poly)
     reg_poly = mod_poly.fit()
     st.header('Statistics Summary')
