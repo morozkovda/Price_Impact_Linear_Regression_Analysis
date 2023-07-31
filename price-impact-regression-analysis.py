@@ -126,7 +126,6 @@ if run_button and uploaded_file2 and uploaded_file3 and uploaded_file4:
     # st.write('{:.10f}'.format(coefficients))
 
     predictions = reg_poly.predict(X_poly)
-
     # X_poly_2 = sm.add_constant(df_merged_out_s[['Position Size','tvl usd value_x','tvl usd value_y']])
     # predictions1 = reg_poly.predict(X_poly)
     # predictions2 = reg_poly.predict(X_poly_2)
@@ -157,6 +156,31 @@ if run_button and uploaded_file2 and uploaded_file3 and uploaded_file4:
     st.header('Accuracy Summary')
     evaluate_model(df_merged['PI'], predictions)
 
+    if positions_graph == True:
+        categories = X_poly['Position Size'].unique()
+        for i in categories:
+            predictions = reg_poly.predict(X_poly.loc[X_poly['Position Size'] == i])
 
-    # evaluate_model(df_merged['PI'], predictions1)
-    # evaluate_model(df_merged_out_s['PI'], predictions2)
+            fig = go.Figure()
+            trace1 = go.Scatter(y=df_merged['PI'].loc[X_poly['Position Size'] == i], mode='lines', name='PI')
+            trace2 = go.Scatter(y=predictions, mode='lines', name='predictions')
+            fig = go.Figure(data=[trace1, trace2])
+            st.header('Postion Size: %.0f '%i)
+            st.plotly_chart(fig)
+
+
+            def evaluate_model(actual, predicted):
+                metrics = {}
+                # calculate mean squared error (MSE)
+                mse = mean_squared_error(actual, predicted)
+                metrics['MSE'] = mse
+                # Calculate the RMSE using scikit-learn's mean_squared_error function
+                rmse = np.sqrt(mse)
+                metrics['RMSE'] = rmse
+                # calculate mean absolute error (MAE)
+                mae = mean_absolute_error(actual, predicted)
+                metrics['MAE'] = mae
+                for metric, value in metrics.items():
+                    st.write(f'{metric}: {value}')
+
+            evaluate_model(df_merged['PI'].loc[X_poly['Position Size'] == i], predictions)
