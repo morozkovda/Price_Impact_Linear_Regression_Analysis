@@ -107,14 +107,10 @@ if run_button and uploaded_file2 and uploaded_file3 and uploaded_file4:
 
     # df_merged = preprocessing(in_sample, usdc_tvl, wbtc_tvl)
     # df_merged_out_s = preprocessing(out_of_sample, usdc_tvl, wbtc_tvl)
-
-    # X_poly = sm.add_constant(df_merged[['Position Size','tvl usd value_x','tvl usd value_y', 'tvl usd value']])
-    # mod_poly = sm.OLS(df_merged['PI'], X_poly)
-    # reg_poly = mod_poly.fit()
-    # reg_poly.summary()
-
-    X_poly = sm.add_constant(df_merged[['Position Size','tvl usd value_x','tvl usd value_y']])
-    # X_poly = sm.add_constant(df_merged[['Position Squared','tvl usd value_x','tvl usd value_y']])
+    if tvl_3 == True:
+        X_poly = sm.add_constant(df_merged[['Position Size','tvl usd value_x','tvl usd value_y', 'tvl usd value']])
+    else:
+        X_poly = sm.add_constant(df_merged[['Position Size','tvl usd value_x','tvl usd value_y']])
     mod_poly = sm.OLS(df_merged['PI'], X_poly)
     reg_poly = mod_poly.fit()
     st.header('Statistics Summary')
