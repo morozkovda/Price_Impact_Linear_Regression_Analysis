@@ -59,6 +59,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/data/wbtc_usdc_pi(1).csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/data/wbtcusdc_tvl_data_new.csv">
           <value>
             <Attribute>
