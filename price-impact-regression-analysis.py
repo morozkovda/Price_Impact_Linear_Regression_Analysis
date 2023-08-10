@@ -22,15 +22,16 @@ uploaded_file1 = st.file_uploader("Upload Price Impact Dataset (CSV)", type=["cs
 uploaded_file2 = st.file_uploader("Upload TVLx (CSV)", type=["csv"])
 uploaded_file3 = st.file_uploader("Upload TVLy (CSV)", type=["csv"])
 uploaded_file4 = st.file_uploader("Upload TVLz (CSV)", type=["csv"])
+uploaded_file5 = st.file_uploader("Upload out of sample PI (CSV)", type=["csv"])
 positions_graph = st.checkbox("Graph against each position size?", True)
 tvl_3 = st.checkbox("Include Third TVL", False)
+ous = st.checkbox("Include out-of-sample test", False)
 run_button = st.button("Run Linear Regression Analysis")
 if run_button and uploaded_file2 and uploaded_file3 and uploaded_file4:
     df_PI = pd.read_csv(uploaded_file1)
     usdc_tvl = pd.read_csv(uploaded_file2)
     wbtc_tvl = pd.read_csv(uploaded_file3)
     wbtcusdc_tvl = pd.read_csv(uploaded_file4)
-
     # Display the result to the user
 
     # df_PI = pd.read_csv(r'data/wbtc_usdc_PI new.csv')
@@ -55,30 +56,33 @@ if run_button and uploaded_file2 and uploaded_file3 and uploaded_file4:
 
     def preprocessing(df_PI, usdc_tvl, wbtc_tvl, wbtcusdc_tvl):
         df_PI = df_PI.drop(df_PI.columns[0], axis=1)
-        df_PI = df_PI.drop(df_PI.columns[3], axis=1)
-        df_PI = pd.melt(df_PI, id_vars=df_PI.columns[[0,1,2]], var_name='Position Size', value_name='PI')
-        df_PI[df_PI.columns[[0,1,2,3]]] = df_PI[df_PI.columns[[0,1,2,3]]].apply(lambda x: x.str.replace("]", ''))
-        df_PI[df_PI.columns[[0,1,2,3]]] = df_PI[df_PI.columns[[0,1,2,3]]].apply(lambda x: x.str.replace("'", ''))
-        df_PI.rename(columns={
-            df_PI.columns[0]: "date",
-            df_PI.columns[1]: "time",
-            df_PI.columns[2]: "timestamp"},inplace= True)
-        print(df_PI.isna().any())
+        # df_PI = df_PI.drop(df_PI.columns[3], axis=1)
+        df_PI = pd.melt(df_PI, id_vars=df_PI.columns[[0,1]], var_name='Position Size', value_name='PI')
+        # df_PI[df_PI.columns[[0, 1, 2, 3]]] = df_PI[df_PI.columns[[0, 1, 2, 3]]].astype(str)
+        # df_PI[df_PI.columns[[0,1,2,3]]] = df_PI[df_PI.columns[[0,1,2,3]]].apply(lambda x: x.str.replace("'", ''))
+        # df_PI[df_PI.columns[[0,1,2,3]]] = df_PI[df_PI.columns[[0,1,2,3]]].apply(lambda x: x.str.replace("]", ''))
+        # df_PI.rename(columns={
+        #     df_PI.columns[0]: "date",
+        #     df_PI.columns[1]: "time",
+        #     df_PI.columns[2]: "timestamp"},inplace= True)
+        # df_PI = df_PI.dropna()
+        # print(df_PI.isna().any())
+        # st.write(df_PI)
+        #
+        # def try_convert_to_float(value):
+        #     try:
+        #         return float(value)
+        #     except ValueError:
+        #         return float(value.replace("]", ''))
 
-        def try_convert_to_float(value):
-            try:
-                return float(value)
-            except ValueError:
-                return float(value.replace("]", ''))
-
-
+        #
         def try_convert_to_int(value):
             try:
                 return int(value)
             except ValueError:
                 return int(value.replace(' ', ''))
-
-        df_PI['PI'] = df_PI['PI'].apply(try_convert_to_float)
+        #
+        # df_PI['PI'] = df_PI['PI'].apply(try_convert_to_float)
         df_PI['Position Size'] = df_PI['Position Size'].apply(try_convert_to_int)
 
         df_PI['datetime'] = df_PI['date'] + ' ' + df_PI['time']
@@ -86,8 +90,8 @@ if run_button and uploaded_file2 and uploaded_file3 and uploaded_file4:
         df_PI['datetime'] = pd.to_datetime(df_PI['datetime'])
         df_PI['datetime'] = df_PI['datetime'].apply(lambda dt: dt.replace(minute=0, second=0) if dt.minute < 30 else dt.replace(minute=0, second=0) + timedelta(hours=1))
         df_PI['date'] = df_PI['datetime']
-        df_PI = df_PI.drop(['time','timestamp','datetime'],axis = 1)
-
+        df_PI = df_PI.drop(['time', 'datetime'],axis = 1)
+        df_PI = df_PI.dropna()
         df_PI = df_PI.groupby(['date','Position Size']).mean()
         df_PI = df_PI.reset_index()
 
@@ -130,6 +134,7 @@ if run_button and uploaded_file2 and uploaded_file3 and uploaded_file4:
     # X_poly_2 = sm.add_constant(df_merged_out_s[['Position Size','tvl usd value_x','tvl usd value_y']])
     # predictions1 = reg_poly.predict(X_poly)
     # predictions2 = reg_poly.predict(X_poly_2)
+
 
     fig = go.Figure()
     trace1 = go.Scatter(y=df_merged['PI'], mode='lines', name='PI')
@@ -185,3 +190,28 @@ if run_button and uploaded_file2 and uploaded_file3 and uploaded_file4:
                     st.write(f'{metric}: {value}')
 
             evaluate_model(df_merged['PI'].loc[X_poly['Position Size'] == i], predictions)
+
+    if ous is True:
+        st.header('Out-of-sample tests summary ')
+        df_ous = pd.read_csv(uploaded_file5)
+        df_merged = preprocessing(df_ous, usdc_tvl, wbtc_tvl, wbtcusdc_tvl)
+        if tvl_3 == True:
+            X_poly = sm.add_constant(df_merged[['Position Size', 'tvl usd value', 'tvl usd value_y', 'tvl usd value_z']])
+        else:
+            X_poly = sm.add_constant(df_merged[['Position Size', 'tvl usd value', 'tvl usd value_y']])
+        predictions = reg_poly.predict(X_poly)
+        evaluate_model(df_merged['PI'], predictions)
+
+        if positions_graph == True:
+            categories = X_poly['Position Size'].unique()
+            for i in categories:
+                predictions = reg_poly.predict(X_poly.loc[X_poly['Position Size'] == i])
+
+                fig = go.Figure()
+                trace1 = go.Scatter(y=df_merged['PI'].loc[X_poly['Position Size'] == i], mode='lines', name='PI')
+                trace2 = go.Scatter(y=predictions, mode='lines', name='predictions')
+                fig = go.Figure(data=[trace1, trace2])
+                st.header('Postion Size: %.0f ' % i)
+                st.plotly_chart(fig)
+
+                evaluate_model(df_merged['PI'].loc[X_poly['Position Size'] == i], predictions)
