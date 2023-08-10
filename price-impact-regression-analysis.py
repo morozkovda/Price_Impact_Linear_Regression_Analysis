@@ -130,6 +130,7 @@ if run_button and uploaded_file2 and uploaded_file3 and uploaded_file4:
     st.write(equation)
     # st.write('{:.10f}'.format(coefficients))
 
+
     predictions = reg_poly.predict(X_poly)
     # X_poly_2 = sm.add_constant(df_merged_out_s[['Position Size','tvl usd value_x','tvl usd value_y']])
     # predictions1 = reg_poly.predict(X_poly)
