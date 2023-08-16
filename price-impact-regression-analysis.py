@@ -91,7 +91,11 @@ if run_button and uploaded_file2 and uploaded_file3 and uploaded_file4:
         df_PI['datetime'] = df_PI['datetime'].apply(lambda dt: dt.replace(minute=0, second=0) if dt.minute < 30 else dt.replace(minute=0, second=0) + timedelta(hours=1))
         df_PI['date'] = df_PI['datetime']
         df_PI = df_PI.drop(['time', 'datetime'],axis = 1)
+
+        # drop na s
         df_PI = df_PI.dropna()
+        df_PI = df_PI.drop(df_PI.loc[df_PI['PI'] == 0].index)
+
         df_PI = df_PI.groupby(['date','Position Size']).mean()
         df_PI = df_PI.reset_index()
 
